@@ -9,7 +9,7 @@ OBJ4 = ./semaphores/semCtrl.c ./sharedMemory/shmCtrl.c
 OBJ5 = ./checkDep/checkDep.c $(OBJ4)
 OBJ5FN = checkDp
 KEYS = sem.Paintkey shmem.Paintkey sem.Checkkey shmem.Checkkey
-CLC = $(OBJ1FN) $(OBJ2FN) $(OBJ3FN) $(OBJ5) $(KEYS)
+CLC = $(OBJ1FN) $(OBJ2FN) $(OBJ3FN) $(OBJ5FN) $(KEYS)
 
 make: $(OBJ1) $(OBJ2) $(OBJ3) $(OBJ5)
 	make clean

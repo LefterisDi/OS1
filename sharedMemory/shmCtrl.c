@@ -48,3 +48,11 @@ key_t get_shmemkey(const char* keyfile){
 
    return shmkey;
 }
+
+int shm_delete(int shmid){
+   if(shmctl(shmid , IPC_RMID , 0) < 0){
+      perror("shared memory delete error!");
+      return -1;
+   }
+   return 0;
+}

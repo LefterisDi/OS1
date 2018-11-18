@@ -57,8 +57,6 @@ int main(int argc , char* argv[]){
      exit(1);
   }
 
-  printf("HEYEYEYEEYEYEYEYEYE\n");
-
 
   for (unsigned short i = 1; i <= 3 ; i++){
      if(sem_down(semCheck , i) < 0){

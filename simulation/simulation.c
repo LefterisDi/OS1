@@ -34,6 +34,15 @@ int main(int argc , char* argv[]){
   Queue* qCheck3;
 
 
+  int semAssembly;
+  int shmAssembly1;
+  int shmAssembly2;
+  int shmAssembly3;
+  Queue* qAssembly1;
+  Queue* qAssembly2;
+  Queue* qAssembly3;
+
+
 
 
   while(--argc > 0){
@@ -84,6 +93,32 @@ int main(int argc , char* argv[]){
   }
 
 
+
+  if ((shmAssembly1 = create_shm_Dep("./assemblyDep/assemblyDep.c" , 'M' , 'A' , "shmem.Assemblykey1" , numOfItems , &qAssembly1)) < 0){
+     exit(1);
+  }
+
+  if ((shmAssembly2 = create_shm_Dep("./assemblyDep/assemblyDep.c" , 'L' , 'B' ,  "shmem.Assemblykey2" , numOfItems , &qAssembly2)) < 0){
+     exit(1);
+  }
+
+  if ((shmAssembly3 = create_shm_Dep("./assemblyDep/assemblyDep.c" , 'K' , 'C' ,  "shmem.Assemblykey3" , numOfItems , &qAssembly3)) < 0){
+     exit(1);
+  }
+
+  if ((semAssembly = create_sem_Dep("./assemblyDep/assemblyDep.c" , 'S' , "sem.Assemblykey" , 3)) < 0){
+     exit(1);
+  }
+
+
+  for (unsigned short i = 0; i <= 2 ; i++){
+     if(sem_down(semAssembly , i) < 0){
+        perror("sem down error!");
+     }
+  }
+
+
+
   for (int i = 1 ; i <= 3 ; i++){
     sprintf(typeOfMerc, "%d", i);
     sprintf(numOfMercs, "%d", numOfItems);
@@ -116,6 +151,14 @@ int main(int argc , char* argv[]){
     }
   }
 
+  if (fork() == 0){
+    if(execl("./assemblyDp" ,"./assemblyDp" , "-N" , numOfMercs , (char *)0) < 0){
+      perror("execl error!\n");
+      exit(1);
+    }
+    exit(0);
+  }
+
   while ((wpid = wait(&status)) > 0);
 
 
@@ -143,6 +186,24 @@ int main(int argc , char* argv[]){
   if (delete_sem_Dep(semCheck) < 0){
     exit(1);
   }
+
+
+  if (delete_shm_Dep(shmAssembly1 , qAssembly1) < 0){
+     exit(1);
+  }
+
+  if (delete_shm_Dep(shmAssembly2 , qAssembly2) < 0){
+     exit(1);
+  }
+
+  if (delete_shm_Dep(shmAssembly3 , qAssembly3) < 0){
+     exit(1);
+  }
+
+  if (delete_sem_Dep(semAssembly) < 0){
+    exit(1);
+  }
+
   exit(0);
 }
 

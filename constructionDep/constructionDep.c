@@ -7,11 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <semaphore.h>
+#include <time.h>
 
 
 #include "constructionDep.h"
 #include "../semaphores/semCtrl.h"
 #include "../sharedMemory/shmCtrl.h"
+#include "../queue/queue.h"
 
 int main(int argc , char* argv[]){
 
@@ -23,19 +25,16 @@ int main(int argc , char* argv[]){
 
   key_t shm;
   int shm_id;
-  Merc* sharedMem;
+  Queue* sharedMem;
+
+  srand(time(NULL));
 
   sem = get_semkey("sem.Paintkey");
   sem_id = semget(sem , 0 , 0);
 
   shm = get_shmemkey("shmem.Paintkey");
-  shm_id = shmget(shm , sizeof(Merc) , 0666);
+  sharedMem = connectQueue(shm);
 
-
-  if((sharedMem = (Merc*)shmat(shm_id , 0 , 0)) < 0){
-     perror("shmat error!");
-     exit(1);
-  }
 
   while(--argc > 0){
 
@@ -59,25 +58,31 @@ int main(int argc , char* argv[]){
 
   for(int i = 0 ; i < numOfMercs ; i++){
 
-     Merc merc1;
-     merc1.type = typeOfMerc;
+     double sleepTime = ((((double)rand() / (double)RAND_MAX) + (double)typeOfMerc) / (1.0 + (double)typeOfMerc)) * 0.4;
+
+     sleep(sleepTime);
+
+     Merc merc;
+     merc.type = typeOfMerc;
+     sprintf(merc.ID , "%d%d", typeOfMerc , i);
 
 
      if(sem_down(sem_id , 0) == 0){
         printf("Down : %d\n" , typeOfMerc);
      }
 
-     *sharedMem = merc1;
+     insertToQ(sharedMem , merc);
 
-     if(sem_up(sem_id , 1) == 0){
-       printf("Up 2ND: %d\n" , typeOfMerc);
+     if(sem_up(sem_id , 1) < 0){
+        exit(1);
      }
 
+     if(sem_up(sem_id , 0) == 0){
+       printf("Up : %d\n" , typeOfMerc);
+     }
+
+
   }
-
-
-
-
 
   exit(0);
   return 0;

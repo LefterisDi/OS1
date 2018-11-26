@@ -10,6 +10,7 @@
 #include "../constructionDep/constructionDep.h"
 #include "../sharedMemory/shmCtrl.h"
 #include "../semaphores/semCtrl.h"
+#include "../queue/queue.h"
 #include "simulation.h"
 
 int main(int argc , char* argv[]){
@@ -19,10 +20,20 @@ int main(int argc , char* argv[]){
   char typeOfMerc[10];
   char numOfMercs[10];
   int numOfItems = 0;
+
   int shmPaint;
-  int shmCheck;
   int semPaint;
+  Queue* qPaint;
+
+  int shmCheck1;
+  int shmCheck2;
+  int shmCheck3;
   int semCheck;
+  Queue* qCheck1;
+  Queue* qCheck2;
+  Queue* qCheck3;
+
+
 
 
   while(--argc > 0){
@@ -37,7 +48,7 @@ int main(int argc , char* argv[]){
     }
   }
 
-  if ((shmPaint = create_shm_Dep("./paintDep/paintDep.c" , 'M' , "shmem.Paintkey")) < 0){
+  if ((shmPaint = create_shm_Dep("./paintDep/paintDep.c" , 'M' , 'A' , "shmem.Paintkey" , 3*numOfItems , &qPaint)) < 0){
      exit(1);
   }
 
@@ -49,16 +60,24 @@ int main(int argc , char* argv[]){
      perror("sem down error!");
   }
 
-  if ((shmCheck = create_shm_Dep("./checkDep/checkDep.c" , 'M' , "shmem.Checkkey")) < 0){
+  if ((shmCheck1 = create_shm_Dep("./checkDep/checkDep.c" , 'M' , 'A' , "shmem.Checkkey1" , numOfItems , &qCheck1)) < 0){
      exit(1);
   }
 
-  if ((semCheck = create_sem_Dep("./checkDep/checkDep.c" , 'S' , "sem.Checkkey" , 4)) < 0){
+  if ((shmCheck2 = create_shm_Dep("./checkDep/checkDep.c" , 'L' , 'B' , "shmem.Checkkey2" , numOfItems , &qCheck2)) < 0){
+     exit(1);
+  }
+
+  if ((shmCheck3 = create_shm_Dep("./checkDep/checkDep.c" , 'K' , 'C' , "shmem.Checkkey3" , numOfItems , &qCheck3)) < 0){
+     exit(1);
+  }
+
+  if ((semCheck = create_sem_Dep("./checkDep/checkDep.c" , 'S' , "sem.Checkkey" , 3)) < 0){
      exit(1);
   }
 
 
-  for (unsigned short i = 1; i <= 3 ; i++){
+  for (unsigned short i = 0; i <= 2 ; i++){
      if(sem_down(semCheck , i) < 0){
         perror("sem down error!");
      }
@@ -87,8 +106,9 @@ int main(int argc , char* argv[]){
 
   for (int i = 1 ; i <= 3 ; i++){
     sprintf(typeOfMerc, "%d", i);
+    sprintf(numOfMercs, "%d", numOfItems);
     if (fork() == 0){
-      if (execl("./checkDp" , "./checkDp" ,  "-T" , typeOfMerc , (char *)0) < 0){
+      if (execl("./checkDp" , "./checkDp" ,  "-T" , typeOfMerc , "-N" , numOfMercs , (char *)0) < 0){
         perror("execl error!\n");
         exit(1);
       }
@@ -99,7 +119,7 @@ int main(int argc , char* argv[]){
   while ((wpid = wait(&status)) > 0);
 
 
-  if (delete_shm_Dep(shmPaint) < 0){
+  if (delete_shm_Dep(shmPaint , qPaint) < 0){
      exit(1);
   }
 
@@ -107,7 +127,16 @@ int main(int argc , char* argv[]){
     exit(1);
   }
 
-  if (delete_shm_Dep(shmCheck) < 0){
+  if (delete_shm_Dep(shmCheck1 , qCheck1) < 0){
+     exit(1);
+  }
+
+  if (delete_shm_Dep(shmCheck2 , qCheck2) < 0){
+     exit(1);
+  }
+
+
+  if (delete_shm_Dep(shmCheck3 , qCheck3) < 0){
      exit(1);
   }
 
@@ -118,11 +147,11 @@ int main(int argc , char* argv[]){
 }
 
 
-int create_shm_Dep(char* filename , int proj_id , char* keyfname){
+int create_shm_Dep(char* filename , int proj_id , int proj_id_array , char* keyfname ,unsigned int numOfElems , Queue** q){
    /*shared memory variables*/
    key_t shmemkey;
+   key_t arrayK;
    int shmid;
-   int shmemflgs = IPC_CREAT | 0666;
 
    /*creates and stores the shared memory key to a file , so that the children can get access to it*/
 
@@ -130,15 +159,23 @@ int create_shm_Dep(char* filename , int proj_id , char* keyfname){
       return(-1);
    }
 
-   if ((shmid = shmget(shmemkey, sizeof(Merc), shmemflgs)) < 0) {
-      perror("shmget!\n");
-      return(-2);
+   if((arrayK = ftok(filename , proj_id_array)) < 0){
+     perror("Couldn't create a key with ftok!");
+     return(-1);
    }
+
+   *q = createQueue(numOfElems , shmemkey , arrayK , &shmid);
 
    return shmid;
 }
 
-int delete_shm_Dep(int semid){
+int delete_shm_Dep(int semid , Queue* q){
+
+   if(deleteArray(q) < 0){
+      perror("Error while trying to delete the shared memory");
+      return -1;
+   }
+
 
    if (shm_delete(semid) < 0){
       perror("Error while trying to delete the shared memory");

@@ -12,6 +12,7 @@
 #include "../constructionDep/constructionDep.h"
 #include "../semaphores/semCtrl.h"
 #include "../sharedMemory/shmCtrl.h"
+#include "../queue/queue.h"
 
 
 int main(int argc , char* argv[]){
@@ -23,18 +24,50 @@ int main(int argc , char* argv[]){
 
    key_t shm;
    int shm_id;
-   Merc* sharedMem;
+   Queue* sharedMem;
+
+
+   key_t checkSem;
+   int checkSemID;
+
+   key_t checkKey1;
+   Queue* checkQueue1;
+
+   key_t checkKey2;
+   Queue* checkQueue2;
+
+   key_t checkKey3;
+   Queue* checkQueue3;
 
    sem = get_semkey("sem.Paintkey");
+
    sem_id = semget(sem , 0 , 0);
 
-   shm = get_shmemkey("shmem.Paintkey");
-   shm_id = shmget(shm , 0 , 0);
-
-   if((sharedMem = (Merc*)shmat(shm_id , 0 , 0)) < 0){
-      perror("shmat error!");
+   if (sem_id < 0){
+      perror("checkSem recovery error");
       exit(1);
    }
+
+   shm = get_shmemkey("shmem.Paintkey");
+   sharedMem = connectQueue(shm);
+
+   checkSem = get_semkey("sem.Checkkey");
+   checkSemID = semget(checkSem , 0 , 0);
+
+   if (checkSemID < 0){
+      perror("checkSem recovery error");
+      exit(1);
+   }
+
+   checkKey1 = get_shmemkey("shmem.Checkkey1");
+   checkQueue1 = connectQueue(checkKey1);
+
+   checkKey2 = get_shmemkey("shmem.Checkkey2");
+   checkQueue2 = connectQueue(checkKey2);
+
+   checkKey3 = get_shmemkey("shmem.Checkkey3");
+   checkQueue3 = connectQueue(checkKey3);
+
 
    while(--argc > 0){
 
@@ -52,19 +85,36 @@ int main(int argc , char* argv[]){
    for (int i = 0 ; i < 3*numOfMercs ; i++){
 
 
-      if(sem_down(sem_id , 1) == 0){
-        printf("Down 2ND: 2ND\n");
+      if(sem_down(sem_id , 1) < 0){
+         exit(1);
       }
 
-      Merc merc1 = *sharedMem;
+      Merc* mercp = popFromQ(sharedMem);
 
-      printf("%d\n" , merc1.type);
-      sleep(2);
+      printf("%d\n" , mercp->type);
 
-      if(sem_up(sem_id , 0) == 0){
-         printf("Up : %d\n\n" , sharedMem ->type);
+      switch (mercp ->type) {
+         case 1:
+            insertToQ(checkQueue1 , *mercp);
+            if(sem_up(checkSemID , 0) < 0){
+               exit(1);
+            }
+            break;
+
+         case 2:
+            insertToQ(checkQueue2 , *mercp);
+            if(sem_up(checkSemID , 1) < 0){
+               exit(1);
+            }
+            break;
+
+         case 3:
+            insertToQ(checkQueue3 , *mercp);
+            if(sem_up(checkSemID , 2) < 0){
+               exit(1);
+            }
+            break;
       }
-
 
    }
 

@@ -1,4 +1,5 @@
 #include "shmCtrl.h"
+#include "../queue/queue.h"
 
 
 key_t create_store_shmemkey(const char* pathname, int proj_id , const char* keyfile){
@@ -49,7 +50,7 @@ key_t get_shmemkey(const char* keyfile){
    return shmkey;
 }
 
-int shm_delete(int shmid){
+int shm_delete(int shmid , Queue* q){
    if(shmctl(shmid , IPC_RMID , 0) < 0){
       perror("shared memory delete error!");
       return -1;

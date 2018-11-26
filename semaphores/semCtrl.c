@@ -63,6 +63,7 @@ int sem_up(int semid , unsigned short sem_num){
    semaphoreBuf.sem_op = 1;
    semaphoreBuf.sem_flg = 0;
    if (semop(semid , &semaphoreBuf , 1) < 0){
+      printf("%d\n", semid);
       perror("semaphore up error!");
       return -1;
    }

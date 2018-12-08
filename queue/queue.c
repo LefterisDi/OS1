@@ -31,7 +31,9 @@ struct Queue* connectQueue(key_t queueKey){
    return queueSharedMem;
 }
 
-Merc* connectArray(Queue* q){
+Merc* connectArray(Queue* q){ /* because the array is a pointer to shared memory
+   and the proccess has to be connected to that shared memory in order to use it , we
+   have to implement this function*/
    int arrayID;
    Merc* arraySharedMem;
 
@@ -53,7 +55,7 @@ Merc* connectArray(Queue* q){
 // function to create a queue of given capacity.
 // It initializes size of queue as 0
 struct Queue* createQueue(unsigned int capacity , key_t queueKey , key_t arrayKey , int* queueID)
-{
+{//creates everything needed for the queue to work properly with shared memory
 
    int shmid;
    Queue* sharedMem;
@@ -105,32 +107,36 @@ int isEmpty(struct Queue* queue)
 
 // Function to add an item to the queue.
 // It changes rear and size
-void insertToQ(struct Queue* queue, Merc item)
+int insertToQ(struct Queue* queue, Merc item)
 {
     if (isFull(queue))
-        return;
+        return -1;
 
 
     Merc* array = connectArray(queue);
     queue->rear = (queue->rear + 1)%queue->capacity;
     array[queue->rear] = item;
     queue->size = queue->size + 1;
+    return 0;
 }
 
 // Function to remove an item from queue.
 // It changes front and size
 Merc* popFromQ(struct Queue* queue)
 {
-    if (isEmpty(queue))
-        return NULL;
+    if (isEmpty(queue)){
+      sleep(10);
+      return NULL;
+    }
     Merc* array = connectArray(queue);
     Merc* item = &array[queue->front];
     queue->front = (queue->front + 1)%queue->capacity;
+
     queue->size = queue->size - 1;
     return item;
 }
 
-int deleteArray(Queue* q){
+int deleteArray(Queue* q){ //deletes queue array
    if(shmctl(q->arrayID , IPC_RMID , 0) < 0){
       perror("shared memory delete error!");
       return -1;

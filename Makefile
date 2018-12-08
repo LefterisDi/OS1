@@ -17,7 +17,7 @@ OBJ6FN = assemblyDp
 
 OBJ4 = ./semaphores/semCtrl.c ./sharedMemory/shmCtrl.c ./queue/queue.c
 
-KEYS = sem.Paintkey shmem.Paintkey sem.Checkkey shmem.Checkkey1 shmem.Checkkey2 shmem.Checkkey3 sem.Assemblykey shmem.Assemblykey1 shmem.Assemblykey2 shmem.Assemblykey3
+KEYS = sem.Paintkey shmem.Paintkey sem.Checkkey shmem.Checkkey1 shmem.Checkkey2 shmem.Checkkey3 sem.Assemblykey shmem.Assemblykey1 shmem.Assemblykey2 shmem.Assemblykey3 shmem.Timekey
 
 CLC = $(OBJ1FN) $(OBJ2FN) $(OBJ3FN) $(OBJ5FN) $(OBJ6FN) $(KEYS)
 

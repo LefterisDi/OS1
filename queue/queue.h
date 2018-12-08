@@ -16,7 +16,7 @@ typedef struct Queue
 
 struct Queue* connectQueue(key_t);
 struct Queue* createQueue(unsigned int , key_t , key_t , int*);
-void insertToQ(struct Queue*, Merc);
+int insertToQ(struct Queue*, Merc);
 Merc* popFromQ(struct Queue*);
 int deleteArray(Queue*);
 

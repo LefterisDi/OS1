@@ -7,19 +7,19 @@ key_t create_store_shmemkey(const char* pathname, int proj_id , const char* keyf
    key_t shmkey;
    int shm_fd;
 
-   if((shmkey = ftok(pathname , proj_id)) < 0){
+   if((shmkey = ftok(pathname , proj_id)) < 0){//creates a key
      perror("Couldn't create a key with ftok!");
      return(-1);
    }
 
-   shm_fd = open(keyfile , O_WRONLY | O_TRUNC | O_EXCL | O_CREAT , 0644);
+   shm_fd = open(keyfile , O_WRONLY | O_TRUNC | O_EXCL | O_CREAT , 0644);//opens a file to save the key
 
    if (shm_fd < 0){
      perror("Could not open sem.Paintkey");
      return(-1);
    }
 
-   if (write(shm_fd , &shmkey , sizeof(key_t)) < 0){
+   if (write(shm_fd , &shmkey , sizeof(key_t)) < 0){//writes the key to the file
      perror("Could not write key to file");
      return(-2);
    }
@@ -30,7 +30,7 @@ key_t create_store_shmemkey(const char* pathname, int proj_id , const char* keyf
 }
 
 
-key_t get_shmemkey(const char* keyfile){
+key_t get_shmemkey(const char* keyfile){//gets the key from the file
 
    int shm_fd;
    key_t shmkey;
@@ -50,7 +50,7 @@ key_t get_shmemkey(const char* keyfile){
    return shmkey;
 }
 
-int shm_delete(int shmid , Queue* q){
+int shm_delete(int shmid , Queue* q){//deletes the shared memory segment
    if(shmctl(shmid , IPC_RMID , 0) < 0){
       perror("shared memory delete error!");
       return -1;
